@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+
+  reverse-proxy:
+    image: traefik:v2.5.4
+    command: --api.insecure=true --providers.docker
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-proxy
+
+
+
+  #front: TODO
+
+
+  back:
+    build:
+      context: ./docker/back
+    depends_on:
+      - db
+    ports:
+      - '81:80'
+    environment:
+      - PHP_XDEBUG_ENABLED=true
+      - PHP_IDE_CONFIG=serverName=app
+      - APP_ENV=dev
+      - WEB_APP_DIR=public
+      - HTTPD_ENABLE_STATUS=true
+      - HTTPD_STATUS_ALLOWED_IP=any
+    volumes:
+      - ./back:/var/www/html/
+      - /etc/hosts:/etc/hosts
+    networks:
+      - app
+      - app-proxy
+    labels:
+      - traefik.http.routers.back.entrypoints=http
+      - traefik.http.routers.back.rule=Host(`api.localhost`)
+      - traefik.http.services.back.loadbalancer.server.port=80
+
+
+      #todo
+  db:
+    image: mariadb:10.7.1
+    ports:
+      - '33061:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_USER: 'root'
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_DATABASE: 'back_db'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+    networks:
+      - app
+
+
+volumes:
+  db_data:
+
+
+networks:
+  app:
+    driver: bridge
+  app-proxy:
+    external: true
