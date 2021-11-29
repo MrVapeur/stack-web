@@ -12,6 +12,6 @@ RUN docker-php-ext-install pdo mysqli pdo_mysql zip;
 COPY apache.conf /etc/apache2/sites-enabled/000-default.conf
 COPY . /var/www
 
-WORKDIR /var/www
+WORKDIR /var/www/html
 
-CMD ["apache2-foreground"
+CMD ["apache2-foreground"]
